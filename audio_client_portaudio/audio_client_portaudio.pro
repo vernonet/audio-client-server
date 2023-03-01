@@ -57,7 +57,8 @@ android {
  INCLUDEPATH += $$PWD/portaudio_a/include/
  LIBS += -L$$PWD/portaudio/armeabi-v7a -lportaudio
  LIBS += -L$$PWD/portaudio/arm64-v8a -lportaudio
- #LIBS += -L$$PWD/portaudio_a/lib/.libs  libportaudio.a
+ ANDROID_EXTRA_LIBS = $$PWD/portaudio/armeabi-v7a/libportaudio.so
+ ANDROID_EXTRA_LIBS += $$PWD/portaudio/arm64-v8a/libportaudio.so
 }
 
 #CONFIG(release, debug|release):DEFINES += QT_NO_DEBUG_OUTPUT
@@ -92,4 +93,4 @@ win32:{
 DISTFILES += \
     readme
 
-ANDROID_EXTRA_LIBS = $$PWD/portaudio_a/lib/.libs/libportaudio.so
+
