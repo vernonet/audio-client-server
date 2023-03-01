@@ -90,7 +90,4 @@ win32:{
 #    QMAKE_TARGET_COPYRIGHT = Автор
 }
 
-DISTFILES += \
-    readme
-
 
