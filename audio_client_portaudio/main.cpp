@@ -453,8 +453,7 @@ int Client::audioCallback( const void *inputBuffer, void *outputBuffer,
     }
     if (rbOut->isChecked() || rbFull->isChecked())  {
         qDebug() << " bytesAvailable -> " << tcpSocket->bytesAvailable();// << " output_buf.pos ->" << output_buf->pos();
-        QByteArray data = tcpSocket->read(framesPerBuffer * SAMPLE_SIZE);
-        memcpy(outputBuffer, data.data(), framesPerBuffer * SAMPLE_SIZE);
+        tcpSocket->read((char *)outputBuffer, framesPerBuffer * SAMPLE_SIZE);
     }
 
 
