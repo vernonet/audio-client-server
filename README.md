@@ -6,11 +6,6 @@
   Used source code <a href="https://github.com/PortAudio/portaudio" rel="nofollow">portaudio</a>, <a href="https://github.com/croissanne/portaudio_opensles"    rel="nofollow">portaudio_opensles</a>.
   
   
-  ... Use "CFG_TUSB_DEBUG=1 or 0".
-  With "CFG_TUSB_DEBUG=2" you will not be able to record the sound.
-  Works on windows XP, 7-11 ,Linux (tested on Linux Mint), meybe macOS.
-
-
 # License
 
   This software is provided under the  <a href="http://unlicense.org/" rel="nofollow">UNLICENSE</a>
