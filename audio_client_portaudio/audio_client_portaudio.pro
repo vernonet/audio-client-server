@@ -54,7 +54,7 @@ win32: {
 #}
 
 android {
- INCLUDEPATH += $$PWD/portaudio_a/include/
+ INCLUDEPATH += $$PWD/portaudio/include/
  LIBS += -L$$PWD/portaudio/armeabi-v7a -lportaudio
  LIBS += -L$$PWD/portaudio/arm64-v8a -lportaudio
  ANDROID_EXTRA_LIBS = $$PWD/portaudio/armeabi-v7a/libportaudio.so
