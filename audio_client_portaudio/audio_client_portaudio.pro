@@ -84,10 +84,10 @@ android {
 win32:{
     RC_ICONS = $$PWD/123.ico
     VERSION = 1.0.0
-#    QMAKE_TARGET_COMPANY = Название компании
-#    QMAKE_TARGET_PRODUCT = Название программы
-#    QMAKE_TARGET_DESCRIPTION = Описание программы
-#    QMAKE_TARGET_COPYRIGHT = Автор
+#    QMAKE_TARGET_COMPANY = 
+#    QMAKE_TARGET_PRODUCT = 
+#    QMAKE_TARGET_DESCRIPTION = 
+#    QMAKE_TARGET_COPYRIGHT = 
 }
 
 
