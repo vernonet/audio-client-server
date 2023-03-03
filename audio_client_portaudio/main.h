@@ -21,7 +21,7 @@
 #define FRAMES_PER_BUFFER   (1024)
 #define SAMPLE_SIZE (2)
 #define SAMPLE_SILENCE      (0)
-#define MAXSRVNR            (3)
+#define MAXSRVNR            (5)
 
 class Client : public QDialog
 {
@@ -44,6 +44,7 @@ private slots:
     void displayError(QAbstractSocket::SocketError socketError);
     void adjustForCurrentServers(QString &server_str);
     void updateRecentServers();
+    void server_url_index_change(int index);
     int audioCallback(
             const void *inputBuffer, void *outputBuffer,
             unsigned long framesPerBuffer,
@@ -80,6 +81,7 @@ private:
     QTcpSocket *tcpSocket;
     QTimer *tmr;
     qintptr socdesk;
+    QStringList access_data;
 
 
     PaStreamParameters inputParameters, outputParameters;

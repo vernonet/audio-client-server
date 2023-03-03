@@ -12,6 +12,7 @@
 #include <QRadioButton>
 #include <QGroupBox>
 #include <QTimer>
+#include <QAbstractItemView>
 #include <main.h>
 #include <portaudio.h>
 
@@ -68,7 +69,9 @@ Client::Client(QWidget *parent)
 //    server_url->addItem("http://192.168.1.100:8082");
 //    server_url->addItem("http://127.0.0.1:8082");
 //    server_url->addItem("http://192.168.123.1:8082");
-    updateRecentServers();
+    //updateRecentServers();
+    QString temp = "";
+    adjustForCurrentServers(temp);
     server_url->setEditable(true);
 
     const auto deviceInfos = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
@@ -122,6 +125,7 @@ Client::Client(QWidget *parent)
     connect(startButton, &QPushButton::clicked, this, &Client::start);
     connect(stopButton, &QPushButton::clicked, this, &Client::stop);
     connect(quitButton, &QPushButton::clicked, this, &QDialog::close);
+    connect(server_url, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Client::server_url_index_change);
 
 
 #if __ANDROID__
@@ -155,6 +159,7 @@ Client::Client(QWidget *parent)
 
 void Client::start()
 {
+    server_url->view()->setDisabled(true);
     authorization_passed = false;
     tcpSocket = new QTcpSocket(this);
     //tcpSocket->setReadBufferSize(8196);
@@ -243,9 +248,11 @@ void Client::start()
         statusBar->showMessage(temp_str, 2000);
     }
 
+    disconnect(server_url, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Client::server_url_index_change);
     sample_rate->setDisabled(true);
     QString url_str = server_url->currentText();
-    adjustForCurrentServers(url_str);
+    QString tmp = server_url->currentText() + "@" + loginpass->text();
+    adjustForCurrentServers(tmp);
     uint16_t url_port;
     QString  url_host;
     if (url_str.contains("http://") && url_str.count(":") == 2){
@@ -357,12 +364,14 @@ void Client::stop()
         if( err != paNoError ) qDebug() << "PortAudio error: " << Pa_GetErrorText( err );
         output_buf->close();
     }
+    server_url->view()->setDisabled(false);
     temp_str = " Stop -> Disconnected!";
     statusBar->showMessage(temp_str, 2000);
     startButton->setEnabled(true);
     stopButton->setEnabled(false);
     temp_str.clear();
     sample_rate->setDisabled(false);
+    connect(server_url, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Client::server_url_index_change);
 
 }
 
@@ -454,6 +463,8 @@ int Client::audioCallback( const void *inputBuffer, void *outputBuffer,
     if (rbOut->isChecked() || rbFull->isChecked())  {
         qDebug() << " bytesAvailable -> " << tcpSocket->bytesAvailable();// << " output_buf.pos ->" << output_buf->pos();
         tcpSocket->read((char *)outputBuffer, framesPerBuffer * SAMPLE_SIZE);
+        //QByteArray data = tcpSocket->read( framesPerBuffer * SAMPLE_SIZE);;
+        //memcpy(outputBuffer, data.data(), framesPerBuffer * SAMPLE_SIZE);
     }
 
 
@@ -464,56 +475,81 @@ int Client::audioCallback( const void *inputBuffer, void *outputBuffer,
 
 void Client::adjustForCurrentServers(QString &server_str){
 
-      QSettings::setPath(QSettings::Format::IniFormat, QSettings::Scope::UserScope, ".");
-      QSettings settings("recent_srv.ini", QSettings::IniFormat);
-      QStringList recentServers =
-              settings.value("recentServers").toStringList();
-      recentServers.removeAll(server_str);
-      recentServers.prepend(server_str);
-      while (recentServers.size() > MAXSRVNR)
-            recentServers.removeLast();
-      if (!settings.isWritable() || settings.status() != QSettings::NoError)
-          qDebug() << " error ->" << settings.status();
-      settings.setValue("recentServers", recentServers);
-      settings.setValue("loginPass", loginpass->text());
-      settings.sync();
+    QSettings::setPath(QSettings::Format::IniFormat, QSettings::Scope::UserScope, ".");
+    QSettings settings("recent_srv.ini", QSettings::IniFormat);
+    QStringList recentServers =
+            settings.value("recentServers").toStringList();
 
-      updateRecentServers();
-  }
+    if (server_str != "") {
+        for (int i = 0; i < recentServers.size();) {
+            qDebug() << " recentServers[i] ->" <<  recentServers[i] << server_str.split("@")[0] << recentServers.size();
+            if (recentServers[i].contains(server_str.split("@")[0])){
+                recentServers.removeAt(i);
+                qDebug() << " removed";
+            }
+            else i++;
+        }
+        if (recentServers.size()) recentServers.prepend(server_str);
+    }
+    while (recentServers.size() > MAXSRVNR)
+        recentServers.removeLast();
+    if (!settings.isWritable() || settings.status() != QSettings::NoError)
+        qDebug() << " error ->" << settings.status();
+    if (recentServers.size() > 0) {
+        settings.setValue("recentServers", recentServers);
+    }
+    else {  //if the file is empty
+        qDebug() << recentServers.size();
+        recentServers.append("http://192.168.1.100:8082@user:password");
+        recentServers.append("http://127.0.0.1:8082@user:password");
+        recentServers.append("http://192.168.123.1:8082@user:password");
+        settings.setValue("recentServers", recentServers);
+        qDebug() << " fill defaults servers";
+    }
+    //settings.setValue("loginPass", loginpass->text());
+    settings.sync();
+    updateRecentServers();
+}
 
-  void Client::updateRecentServers(){
+void Client::updateRecentServers(){
 
-      QSettings::setPath(QSettings::Format::IniFormat, QSettings::Scope::UserScope, ".");
-      QSettings settings("recent_srv.ini", QSettings::IniFormat);
-      QStringList recentServers_ =
-              settings.value("recentServers").toStringList();
-      QStringList loginPass =
-              settings.value("loginPass").toStringList();
+    QStringList tmp;
+    QSettings::setPath(QSettings::Format::IniFormat, QSettings::Scope::UserScope, ".");
+    QSettings settings("recent_srv.ini", QSettings::IniFormat);
 
-      auto itEnd = 0u;
-      if(recentServers_.size() <= MAXSRVNR)
-          itEnd = recentServers_.size();
-      else
-          itEnd = MAXSRVNR;
+    access_data = settings.value("recentServers").toStringList();
 
-      server_url->clear();
-      for (auto i = 0u; i < itEnd; ++i) {
-          server_url->addItem(recentServers_.at(i));
-          qDebug() << " comboBox->addItem ->" << recentServers_.at(i);
-      }
-      //
-      if (recentServers_.size() == 0) {
-          server_url->addItem("http://192.168.1.100:8082");
-          server_url->addItem("http://127.0.0.1:8082");
-          server_url->addItem("http://192.168.123.1:8082");
-          qDebug() << " server_url->addItem ->" <<  server_url->currentText();
-      }
-      if (loginPass.size() == 0) {
-          loginpass->setText("user:password");
-          qDebug() << " loginpass->setText ->" <<  loginpass->text();
-      }
-      else loginpass->setText(loginPass.join(":"));
+    QStringList recentServers_ =
+            settings.value("recentServers").toStringList();
 
+    auto itEnd = 0u;
+    if(recentServers_.size() <= MAXSRVNR)
+        itEnd = recentServers_.size();
+    else
+        itEnd = MAXSRVNR;
+
+    server_url->clear();
+    loginpass->clear();
+
+    for (auto i = 0u; i < itEnd; ++i) {
+        server_url->addItem(recentServers_.at(i).split("@")[0]);
+        qDebug() << " server_url->addItem ->" << recentServers_.at(i).split("@")[0];
+    }
+
+    if (recentServers_.at(0).split("@").size() > 1) {
+        tmp = access_data[0].split("@");
+        loginpass->setText(tmp[1]);
+    }
+    else loginpass->setText("user:password");
+
+}
+
+  void Client::server_url_index_change (int index) {
+
+      qDebug() << " server_url_ind_change";
+      QStringList tmp = access_data.at(index).split("@");
+      if (tmp.size() > 1)  loginpass->setText(tmp[1]);
+         else loginpass->setText("user:password");
   }
 
 //bool Client::requestPermissions()
